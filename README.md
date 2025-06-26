@@ -1,11 +1,13 @@
 ## StyleNAT: Giving Each Head a New Perspective
+
+<a href="https://openaccess.thecvf.com/content/CVPR2025W/eLVM/html/Walton_Efficient_Image_Generation_with_Variadic_Attention_Heads_CVPRW_2025_paper"><img src="https://img.shields.io/badge/eLVM-CVPR_2025-green"/></a>
 <a href="https://arxiv.org/abs/2211.05770"><img src="https://img.shields.io/badge/arxiv-https%3A%2F%2Farxiv.org%2Fabs%2F2211.05770-red"/></a>
 
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/stylenat-giving-each-head-a-new-perspective/image-generation-on-ffhq-256-x-256)](https://paperswithcode.com/sota/image-generation-on-ffhq-256-x-256?p=stylenat-giving-each-head-a-new-perspective)
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/stylenat-giving-each-head-a-new-perspective/image-generation-on-ffhq-1024-x-1024)](https://paperswithcode.com/sota/image-generation-on-ffhq-1024-x-1024?p=stylenat-giving-each-head-a-new-perspective)
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/stylenat-giving-each-head-a-new-perspective/image-generation-on-lsun-churches-256-x-256)](https://paperswithcode.com/sota/image-generation-on-lsun-churches-256-x-256?p=stylenat-giving-each-head-a-new-perspective)
 
-##### Authors: [Steven Walton](https://github.com/stevenwalton), [Ali Hassani](https://github.com/alihassanijr), [Xingqian Xu](https://github.com/xingqian2018), Zhangyang Wang, [Humphrey Shi](https://github.com/honghuis)
+##### Authors: [Steven Walton](https://github.com/stevenwalton), [Ali Hassani](https://github.com/alihassanijr), [Xingqian Xu](https://github.com/xingqian2018), [Zhangyang Wang](https://www.vita-group.space/), [Humphrey Shi](https://github.com/honghuis)
 
 ![header](images/header.png)
 StyleNAT is a Style-based GAN that exploits [Neighborhood
@@ -126,14 +128,13 @@ argument.
 
 ## Citation:
 ```bibtex
-@article{walton2022stylenat,
-    title         = {StyleNAT: Giving Each Head a New Perspective},
-    author        = {Steven Walton and Ali Hassani and Xingqian Xu and Zhangyang Wang and Humphrey Shi},
-    year          = 2022,
-    url           = {https://arxiv.org/abs/2211.05770},
-    eprint        = {2211.05770},
-    archiveprefix = {arXiv},
-    primaryclass  = {cs.CV}
+@InProceedings{Walton_2025_CVPR,
+    author    = {Walton, Steven and Hassani, Ali and Xu, Xingqian and Wang, Zhangyang and Shi, Humphrey},
+    title     = {Efficient Image Generation with Variadic Attention Heads},
+    booktitle = {Proceedings of the Computer Vision and Pattern Recognition Conference (CVPR) Workshops},
+    month     = {June},
+    year      = {2025},
+    pages     = {3239-3250}
 }
 ```
 
