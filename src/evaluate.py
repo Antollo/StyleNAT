@@ -88,15 +88,17 @@ def evaluate(args,
     if args.logging.reuse_samplepath:
         clear_directory(args)
     torch.cuda.synchronize()
-    save_images_batched(args=args,
-                        generator=generator,
-                        steps=steps,
-                        log_first_batch=log_first_batch)
+    #save_images_batched(args=args,
+    #                    generator=generator,
+    #                    steps=steps,
+    #                    log_first_batch=log_first_batch)
     if args.evaluation.gt_path[0] != "/":
         gt_path = args.dataset.path + args.evaluation.gt_path
     else:
         gt_path = args.evaluation.gt_path
-    fid = fid_score.calculate_fid_given_paths([path, gt_path],
+    fid = fid_score.calculate_fid_given_generator([path, gt_path],
+                                              args,
+                                              generator,
                                               batch_size=args.evaluation.batch,
                                               device=args.device,
                                               dims=2048,

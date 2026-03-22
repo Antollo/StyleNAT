@@ -40,7 +40,7 @@ def main(args):
     if "restart" in args and "ckpt" in args.restart and args.restart.ckpt:
         assert(os.path.exists(args.restart.ckpt)),f"Can't find a checkpoint "\
                 f"at {args.restart.ckpt}"
-        ckpt = torch.load(args.restart.ckpt, map_location=lambda storage, loc: storage)
+        ckpt = torch.load(args.restart.ckpt, map_location=lambda storage, loc: storage, weights_only=False)
         if "start_iter" not in args.restart:
             with open_dict(args):
                 try:

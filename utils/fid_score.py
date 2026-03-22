@@ -220,6 +220,7 @@ from PIL import Image, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True # For large images
 from scipy import linalg
 from torch.nn.functional import adaptive_avg_pool2d
+from dataset.dataset import unnormalize
 
 try:
     from tqdm import tqdm
@@ -415,7 +416,7 @@ def compute_statistics_of_path(path, model, batch_size, dims, device, num_worker
     else:
         path = pathlib.Path(path)
         files = sorted([file for ext in IMAGE_EXTENSIONS
-                        for file in path.glob('*.{}'.format(ext))])
+                        for file in path.rglob('*.{}'.format(ext))])
                 
         assert(len(files) > 0),f"Got {len(files)} images!"
         m, s = calculate_activation_statistics(files, model, batch_size,
@@ -423,12 +424,13 @@ def compute_statistics_of_path(path, model, batch_size, dims, device, num_worker
 
     return m, s
 
-def compute_statistics_of_loader(dataloader, model, batch_size, dims, device):
-    pred_arr = np.empty((len(dataloader)*batch_size, dims))
+def compute_statistics_of_loader(dataloader, model, batch_size, dims, device, nbatches=None):
+    model.eval()
+    pred_arr = np.empty(((nbatches or len(dataloader))*batch_size, dims))
 
     start_idx = 0
 
-    for batch in tqdm(dataloader, desc="FID Dataloader"):
+    for batch in tqdm(dataloader, desc="FID Dataloader", total=nbatches or len(dataloader)):
         # Check if there is a label and discard if there is
         if type(batch) == tuple or type(batch) == list:
             batch = batch[0]
@@ -478,7 +480,7 @@ def get_random_N_subset_from_path(path, model, batch_size, dims, device, num_wor
     else:
         path = pathlib.Path(path)
         files = sorted([file for ext in IMAGE_EXTENSIONS
-                        for file in path.glob('*.{}'.format(ext))])
+                        for file in path.rglob('*.{}'.format(ext))])
 
     model.eval()
 
@@ -545,6 +547,39 @@ def calculate_fid_given_paths(paths, batch_size, device, dims, num_workers=32,N=
 
     return fid_value
 
+def calculate_fid_given_generator(paths, args, generator, batch_size, device, dims, num_workers=32,N=50000):
+    """Calculates the FID of a generator"""
+    path = paths[1]
+    if not os.path.exists(path):
+        raise RuntimeError('Invalid path: %s' % path)
+
+    block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[dims]
+
+    model = InceptionV3([block_idx]).to(device)
+
+    nbatches = args.evaluation.total_size // args.evaluation.batch
+
+    def dummy_generator():
+        for _ in range(nbatches):
+            noise = torch.randn((args.evaluation.batch, args.runs.generator.style_dim)).to(args.device)
+            sample, _ = generator(noise)
+            sample = unnormalize(sample)
+            sample = sample.clamp(0, 1)
+            sample = (sample * 255).round() / 255
+            yield sample
+
+    # Samples
+    print(f"Computing statistics of samples from generator")
+    m1, s1 = compute_statistics_of_loader(dummy_generator(), model, batch_size,
+                                        dims, device, nbatches=nbatches)
+    # Get a random subset of the GT data
+    print(f"Computing statistics of ground truth from {path}")
+    m2, s2 = get_random_N_subset_from_path(path, model, batch_size,
+                                           dims, device, num_workers,
+                                           N)
+    fid_value = calculate_frechet_distance(m1, s1, m2, s2)
+
+    return fid_value
 
 def main():
     args = parser.parse_args()
