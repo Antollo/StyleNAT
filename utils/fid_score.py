@@ -473,7 +473,14 @@ def compute_statistics_of_dataset(dataset, model, batch_size, dims, device, num_
                                              )
     return mu, sigma
 
-def get_random_N_subset_from_path(path, model, batch_size, dims, device, num_workers,N=50000):
+_get_random_N_subset_from_path_cache = dict()
+def get_random_N_subset_from_path(path, model, batch_size, dims, device, num_workers, N=50000):
+    global _get_random_N_subset_from_path_cache
+    path_key = str(path)
+    if path_key in _get_random_N_subset_from_path_cache:
+        print(f"Using cached statistics for {path_key}")
+        return _get_random_N_subset_from_path_cache[path_key]
+
     if path.endswith('.npz'):
         with np.load(path) as f:
             m, s = f['mu'][:], f['sigma'][:]
@@ -503,6 +510,7 @@ def get_random_N_subset_from_path(path, model, batch_size, dims, device, num_wor
                                              dims,
                                              device,
                                              )
+    _get_random_N_subset_from_path_cache[path_key] = (mu, sigma)
     return mu, sigma
 
 def calculate_fid_path_and_dataset(sample_path, dataset, batch_size, device, dims, num_workers=8, N=50000):
