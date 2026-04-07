@@ -92,11 +92,11 @@ def evaluate(args,
     #                    generator=generator,
     #                    steps=steps,
     #                    log_first_batch=log_first_batch)
-    if args.evaluation.gt_path[0] != "/":
-        gt_path = args.dataset.path + args.evaluation.gt_path
-    else:
-        gt_path = args.evaluation.gt_path
-    fid = fid_score.calculate_fid_given_generator([path, gt_path],
+    #if args.evaluation.gt_path[0] != "/":
+    #    gt_path = args.dataset.path + args.evaluation.gt_path
+    #else:
+    #    gt_path = args.evaluation.gt_path
+    fid = fid_score.calculate_fid_given_generator([path, args.dataset.path],
                                               args,
                                               generator,
                                               batch_size=args.evaluation.batch,

@@ -45,3 +45,6 @@ training:
     lr_decay: True
     lr_decay_start_steps: 775000
     gan_weight: 1
+    sd_loss_weight: 0.0
+    sd_loss_aug: True
+    sd_loss_type: lpips

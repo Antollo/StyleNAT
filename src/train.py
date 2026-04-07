@@ -15,6 +15,7 @@ from dataset.dataset import get_dataset, get_loader
 from models.discriminator import Discriminator
 from src.evaluate import evaluate
 from src.analysis import visualize_attention
+from src.sd_loss import SDLoss
 
 try:
     import wandb
@@ -221,10 +222,22 @@ def train(args, generator, g_ema, ckpt=None):
     d_loss_val = 0
     r1_loss = torch.tensor(0.0, device=args.device)
     g_loss_val = 0
+    sd_loss_val = 0
     accum = 0.5 ** (32 / (10 * 1000))
     loss_dict = {}
     l2_loss = torch.nn.MSELoss()
     loss_dict = {}
+
+    use_sd_loss = args.runs.training.sd_loss_weight > 0
+    sd_loss_fn = SDLoss(
+        device=args.device,
+        use_aug=args.runs.training.sd_loss_aug,
+        loss_type=args.runs.training.sd_loss_type,
+    )
+    if get_rank() == 0:
+        print(f"SDLoss weight={args.runs.training.sd_loss_weight}, "
+              f"aug={args.runs.training.sd_loss_aug}, "
+              f"type={args.runs.training.sd_loss_type}")
 
     if args.distributed:
         g_module = generator.module
@@ -326,9 +339,16 @@ def train(args, generator, g_ema, ckpt=None):
                              args.runs.generator.style_dim)).cuda()
         fake_img, _ = generator(noise)
         fake_pred = discriminator(fake_img)
-        g_loss = g_nonsaturating_loss(fake_pred)* args.runs.training.gan_weight
+        g_loss = g_nonsaturating_loss(fake_pred) * args.runs.training.gan_weight
 
+        with torch.no_grad():
+            sd_ema_img, _ = g_ema(noise)
+
+        sd_loss = sd_loss_fn(fake_img, sd_ema_img)
+        loss_dict["sd"] = sd_loss
         loss_dict["g"] = g_loss
+        if use_sd_loss:
+            g_loss = g_loss + sd_loss * args.runs.training.sd_loss_weight
         generator.zero_grad(set_to_none=True)
         g_loss.backward()
         g_optim.step()
@@ -340,6 +360,7 @@ def train(args, generator, g_ema, ckpt=None):
         d_loss_val = loss_reduced["d"].mean().item()
         g_loss_val = loss_reduced["g"].mean().item()
         r1_val = loss_reduced["r1"].mean().item()
+        sd_loss_val = loss_reduced["sd"].mean().item()
 
 
         if args.runs.training.lr_decay \
@@ -391,14 +412,17 @@ def train(args, generator, g_ema, ckpt=None):
                     "G_lr": args.runs.generator.lr,
                     "D_lr": args.runs.discriminator.lr,
                     })
+                    wandb_dict['sd_loss'] = sd_loss_val
                 iters_time = time.time() - end
                 end = time.time()
+                _sd_str = f"\tSD: {sd_loss_val:.4f}"
                 if args.runs.training.lr_decay:
                     print(f"Iters: {i}"\
                           f"\tTime: {iters_time:.4f}"\
                           f"\tD_loss: {d_loss_val:.4f}"\
                           f"\tG_loss: {g_loss_val:.4f}"\
                           f"\tR1: {r1_val:.4f}"\
+                          f"{_sd_str}"\
                           f"\tG_lr: {args.runs.generator.lr}"\
                           f"\tD_lr: {args.runs.discriminator.lr}")
                 else:
@@ -406,7 +430,8 @@ def train(args, generator, g_ema, ckpt=None):
                           f"\tTime: {iters_time:.4f}"\
                           f"\tD_loss: {d_loss_val:.4f}"\
                           f"\tG_loss: {g_loss_val:.4f}"\
-                          f"\tR1: {r1_val:.4f}")
+                          f"\tR1: {r1_val:.4f}"\
+                          f"{_sd_str}")
             if i % args.logging.save_freq == 0 and i != 0:
                 state_dicts = {"g": g_module.state_dict(),
                                "d": d_module.state_dict(),
